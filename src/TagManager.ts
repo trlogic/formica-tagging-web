@@ -2,7 +2,7 @@ interface TagManager {
 
   initialize(): void
 
-  loadConfiguration(): Array<any>
+  loadConfiguration(): void
 
   listen(): void
 }

@@ -1,11 +1,9 @@
-import FTMFilter from "./FTMFilter";
-import FTMTrigger from "./FTMTrigger";
+
+import FTMTrack from "./FTMTrack";
 
 interface FTMConfiguration {
-  trigger:FTMTrigger;
-  filters: Array<FTMFilter>
+  serviceUrl : string,
+  trackers: Array<FTMTrack>
 }
-
-
 
 export default FTMConfiguration;

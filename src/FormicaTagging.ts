@@ -1,6 +1,6 @@
 import TagManager from "./TagManager";
 import $ from "jquery";
-import FTMConfiguration from "./FTMConfiguration";
+import FTMTrack from "./FTMTrack";
 import TriggerType from "./TriggerType";
 import FTMFilter from "./FTMFilter";
 import FTMFilterOperator from "./FTMFilterOperator";
@@ -8,19 +8,22 @@ import FTMFilterCondition from "./FTMFilterCondition";
 import FTMFormType from "./FTMFormType";
 import FTMOutputData from "./FTMOutputData";
 import FTMOutput from "./FTMOutput";
+import FTMConfiguration from "./FTMConfiguration";
 
 class FormicaTagging implements TagManager {
+  public serviceUrl : string= "";
 
   public constructor() {
   }
 
   public async initialize() {
-    const configurations: Array<FTMConfiguration> = this.loadConfiguration()
-    const startNow =  this.prepareTriggers(configurations)
+    const configurations: FTMConfiguration = this.loadConfiguration()
+    this.serviceUrl = configurations.serviceUrl;
+    const startNow =  this.prepareTriggers(configurations.trackers)
   }
 
   public loadConfiguration() {
-    const configs: Array<FTMConfiguration> = [
+    const trackers: Array<FTMTrack> = [
       {
         trigger: {
           type: TriggerType.DOM_LOAD
@@ -68,7 +71,6 @@ class FormicaTagging implements TagManager {
           value: "/"
         }]
       },
-
       {
         trigger: {
           type: TriggerType.HISTORY_CHANGE
@@ -104,6 +106,10 @@ class FormicaTagging implements TagManager {
         }]
       }
     ]
+    const configs: FTMConfiguration = {
+      serviceUrl: "https://reqbin.com/echo/post/json",
+      trackers: trackers
+    }
     return configs
   }
 
@@ -260,7 +266,14 @@ class FormicaTagging implements TagManager {
 
   public sendOutput(output: FTMOutput) {
     console.log(output)
-    //TODO SEND OUTPUT IN HERE
+
+    const http = new XMLHttpRequest()
+
+    http.open("POST",this.serviceUrl)
+    http.setRequestHeader("Content-Type", 'application/json');
+    http.send(JSON.stringify(output))
+
+    http.onload = () => console.log(http.responseText)
   }
 
   public fullElementPathFinder(jquerySelector: any) {
@@ -290,7 +303,7 @@ class FormicaTagging implements TagManager {
     };
 }
 
-  public clickTrigger(config: FTMConfiguration) {
+  public clickTrigger(config: FTMTrack) {
     let filters: Array<any> = []
     let secondTypeFilters: Array<any> = []
     const jqueryPreFilter = config.filters.filter((f) => f.condition == "class" || f.condition == "id")
@@ -318,7 +331,7 @@ class FormicaTagging implements TagManager {
       this.runTriggerInEverywhere(trigger())
     }
 
-  public formSubmitTrigger(config: FTMConfiguration) {
+  public formSubmitTrigger(config: FTMTrack) {
     let filters: Array<any> = []
     let secondTypeFilters: Array<any> = []
     const jqueryPreFilter = config.filters.filter((f) => f.condition == "class" || f.condition == "id")
@@ -345,7 +358,7 @@ class FormicaTagging implements TagManager {
     this.runTriggerInEverywhere(trigger())
     };
 
-  public domReadyTrigger(config: FTMConfiguration) {
+  public domReadyTrigger(config: FTMTrack) {
     const _this = this
     $(function (e) {
       _this.domEventHandler(TriggerType.DOM_READY, this, e)
@@ -354,7 +367,7 @@ class FormicaTagging implements TagManager {
   }
 
 
-  public windowLoadTrigger(config: FTMConfiguration) {
+  public windowLoadTrigger(config: FTMTrack) {
     const _this = this
 
     $(window).on("load", function (e) {
@@ -368,7 +381,7 @@ class FormicaTagging implements TagManager {
 
   }
 
-  public historyChangeTrigger(config: FTMConfiguration) {
+  public historyChangeTrigger(config: FTMTrack) {
     const externalValueDecider = (e: FTMFilter, path: string | URL | null | undefined) => {
       switch (e.condition) {
         case FTMFilterCondition.NEW_PATH:
@@ -410,13 +423,13 @@ class FormicaTagging implements TagManager {
     };
   }
 
-  public prepareTriggers(configs: Array<FTMConfiguration>) {
+  public prepareTriggers(configs: Array<FTMTrack>) {
     /*    AND operation
         a=$('[myc="blue"][myid="1"][myid="3"]');
         OR operation, use commas
         a=$('[myc="blue"],[myid="1"],[myid="3"]');
         */
-    configs.map((d: FTMConfiguration) => {
+    configs.map((d: FTMTrack) => {
       switch (d.trigger.type) {
         case TriggerType.CLICK:
           this.clickTrigger(d)
