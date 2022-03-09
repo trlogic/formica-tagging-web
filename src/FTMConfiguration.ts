@@ -1,8 +1,7 @@
-
 import FTMTrack from "./FTMTrack";
 
 interface FTMConfiguration {
-  serviceUrl : string,
+  serviceUrl: string,
   trackers: Array<FTMTrack>
 }
 

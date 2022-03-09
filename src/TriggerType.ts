@@ -1,4 +1,4 @@
-enum TriggerType{
+enum TriggerType {
   CLICK = "click",
   DOM_READY = "domReady",
   DOM_LOAD = "domLoad",

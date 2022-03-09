@@ -1,5 +1,4 @@
-
-enum FTMFilterCondition{
+enum FTMFilterCondition {
   CLASS = "class",
   ID = "id",
   ASTERISK = "*",

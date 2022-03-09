@@ -6,12 +6,11 @@ import FTMFilter from "./FTMFilter";
 import FTMFilterOperator from "./FTMFilterOperator";
 import FTMFilterCondition from "./FTMFilterCondition";
 import FTMFormType from "./FTMFormType";
-import FTMOutputData from "./FTMOutputData";
 import FTMOutput from "./FTMOutput";
 import FTMConfiguration from "./FTMConfiguration";
 
 class FormicaTagging implements TagManager {
-  public serviceUrl : string= "";
+  public serviceUrl: string = "";
 
   public constructor() {
   }
@@ -19,7 +18,7 @@ class FormicaTagging implements TagManager {
   public async initialize() {
     const configurations: FTMConfiguration = this.loadConfiguration()
     this.serviceUrl = configurations.serviceUrl;
-    const startNow =  this.prepareTriggers(configurations.trackers)
+    const startNow = this.prepareTriggers(configurations.trackers)
   }
 
   public loadConfiguration() {
@@ -269,7 +268,7 @@ class FormicaTagging implements TagManager {
 
     const http = new XMLHttpRequest()
 
-    http.open("POST",this.serviceUrl)
+    http.open("POST", this.serviceUrl)
     http.setRequestHeader("Content-Type", 'application/json');
     http.send(JSON.stringify(output))
 
@@ -301,7 +300,7 @@ class FormicaTagging implements TagManager {
       _pushState.call(this, state, title, url);
 
     };
-}
+  }
 
   public clickTrigger(config: FTMTrack) {
     let filters: Array<any> = []
@@ -328,8 +327,8 @@ class FormicaTagging implements TagManager {
         })
       })
     }
-      this.runTriggerInEverywhere(trigger())
-    }
+    this.runTriggerInEverywhere(trigger())
+  }
 
   public formSubmitTrigger(config: FTMTrack) {
     let filters: Array<any> = []
@@ -356,7 +355,7 @@ class FormicaTagging implements TagManager {
       }
     )
     this.runTriggerInEverywhere(trigger())
-    };
+  };
 
   public domReadyTrigger(config: FTMTrack) {
     const _this = this
@@ -373,11 +372,6 @@ class FormicaTagging implements TagManager {
     $(window).on("load", function (e) {
       _this.domEventHandler(TriggerType.DOM_LOAD, this, e)
     })
-
-  }
-
-  private domEventHandler(triggered: TriggerType, _this: any, context: any) {
-    this.prepareOutput(triggered, context, _this)
 
   }
 
@@ -452,8 +446,12 @@ class FormicaTagging implements TagManager {
     return true
   }
 
-
   public listen() {
+  }
+
+  private domEventHandler(triggered: TriggerType, _this: any, context: any) {
+    this.prepareOutput(triggered, context, _this)
+
   }
 }
 

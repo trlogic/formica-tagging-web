@@ -3,10 +3,10 @@ import FTMFormType from "./FTMFormType";
 interface FTMOutputData {
   //Formica time yapısı ile de gönderilebilir
   start?: number,
-  fullElementPath?:Array<string>,
+  fullElementPath?: Array<string>,
   elementClasses?: string,
   elementId?: string,
-  elementTarget?:string,
+  elementTarget?: string,
   elementUrl?: string,
   newUrl?: string,
   newPath?: string,
@@ -14,9 +14,9 @@ interface FTMOutputData {
   currentPath?: string,
   currentHostname?: string,
   //currentUrl ve oldUrl çoğu zaman aynı oluyor biri silinebilir.
-  currentUrl?:string,
+  currentUrl?: string,
   oldUrl?: string,
-  FormData?:Array<FTMFormType>
+  FormData?: Array<FTMFormType>
 
 }
 

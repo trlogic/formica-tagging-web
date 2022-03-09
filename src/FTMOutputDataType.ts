@@ -1,9 +1,9 @@
 enum FTMOutputDataType {
-  START ="start",
-  ELEMENT_CLASSES= "elementClasses",
+  START = "start",
+  ELEMENT_CLASSES = "elementClasses",
   ELEMENT_ID = "elementId",
   ELEMENT_TARGET = "elementTarget",
-  ELEMENT_URL ="elementUrl",
+  ELEMENT_URL = "elementUrl",
   NEW_URL = "newUrl",
   NEW_PATH = "newPath",
   NEW_HOSTNAME = "newHostname",

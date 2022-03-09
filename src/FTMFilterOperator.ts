@@ -1,4 +1,4 @@
-enum FTMFilterOperator{
+enum FTMFilterOperator {
   EQUAL = "equal",
   CONTAINS = "contains",
   STARTS_WITH = "startsWith",

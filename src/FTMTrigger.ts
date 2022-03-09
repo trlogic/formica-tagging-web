@@ -1,6 +1,6 @@
 import TriggerType from "./TriggerType";
 
-interface FTMTrigger{
+interface FTMTrigger {
   type: TriggerType
 }
 

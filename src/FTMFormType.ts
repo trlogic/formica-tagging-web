@@ -1,8 +1,8 @@
 interface FTMFormType {
   name: string,
   class: string,
-  id : string,
-  value: string ,
+  id: string,
+  value: string,
   type: string
 }
 
