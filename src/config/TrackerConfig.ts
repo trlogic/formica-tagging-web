@@ -1,8 +1,8 @@
-import Tag from "../event/Tag";
+import TrackerSchema from "../event/TrackerSchema";
 
-class TrackerConfig {
+interface TrackerConfig {
 
-  readonly tags: Array<Tag>;
+  readonly tags: Array<TrackerSchema>;
 
   readonly httpEventGatewayUrl: string;
 

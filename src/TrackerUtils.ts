@@ -19,11 +19,8 @@ export const resolveVariable = (mapping: string, tagVariables: { [key: string]: 
   return mapping;
 }
 
-const resolveToken = (token: TagVariableSchema | Filter | string, variables: { [key: string]: string }): string => {
-  if (token instanceof Filter) {
-    const result: boolean = resolveFilter(token, variables);
-    return `${result}`;
-  } else if (token instanceof TagVariableSchema) {
+const resolveToken = (token: TagVariableSchema | string, variables: { [key: string]: string }): string => {
+  if (typeof token == "object") {
     const variable: TagVariableSchema = token as TagVariableSchema;
     return variables[variable.name];
   } else {
@@ -108,12 +105,6 @@ const calculateFilter = (leftValue: string, rightValue: string, operator: Operat
     }
     case Operator.GREATER_THAN_OR_EQUALS: {
       return (Number.parseFloat(leftValue) >= Number.parseFloat(rightValue));
-    }
-    case Operator.AND: {
-      return (leftValue == "true") && (rightValue == "true")
-    }
-    case Operator.OR: {
-      return (leftValue == "true") || (rightValue == "true")
     }
     default: {
       return false;

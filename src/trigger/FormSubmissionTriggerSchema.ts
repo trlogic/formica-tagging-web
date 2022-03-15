@@ -1,6 +1,6 @@
 import TriggerSchema from "./TriggerSchema";
 
-class FormSubmissionTriggerSchema extends TriggerSchema {
+interface FormSubmissionTriggerSchema extends TriggerSchema {
 
   readonly onlyValid: boolean;
 }

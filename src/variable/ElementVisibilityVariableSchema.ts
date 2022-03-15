@@ -1,6 +1,6 @@
 import DomVariableSchema from "./DomVariableSchema";
 
-class ElementVisibilityVariableSchema extends DomVariableSchema {
+interface ElementVisibilityVariableSchema extends DomVariableSchema {
 
   readonly thresholdPercentage: number;
 }

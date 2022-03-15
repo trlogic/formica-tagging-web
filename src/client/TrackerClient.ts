@@ -1,9 +1,9 @@
 import Event from "../event/Event";
-import Tag from "../event/Tag";
+import TrackerSchema from "../event/TrackerSchema";
 
 interface TrackerClient {
 
-  getTags(): Array<Tag>;
+  getTags(): Array<TrackerSchema>;
 
   sendEvent(event: Event): void
 }

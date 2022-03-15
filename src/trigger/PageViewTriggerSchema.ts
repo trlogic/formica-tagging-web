@@ -1,6 +1,6 @@
 import TriggerSchema from "./TriggerSchema";
 
-class PageViewTriggerSchema extends TriggerSchema {
+interface PageViewTriggerSchema extends TriggerSchema {
 }
 
 export default PageViewTriggerSchema;

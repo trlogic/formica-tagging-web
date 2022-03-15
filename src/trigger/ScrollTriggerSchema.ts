@@ -1,6 +1,6 @@
 import TriggerSchema from "./TriggerSchema";
 
-class ScrollTriggerSchema extends TriggerSchema {
+interface ScrollTriggerSchema extends TriggerSchema {
 
   readonly horizontal: boolean;
 

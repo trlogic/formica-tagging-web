@@ -34,9 +34,6 @@ enum Operator {
   LESS_THAN_OR_EQUALS,
   GREATER_THAN,
   GREATER_THAN_OR_EQUALS,
-
-  AND,
-  OR
 }
 
 export default Operator;

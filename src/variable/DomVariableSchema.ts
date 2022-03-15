@@ -1,6 +1,6 @@
 import TagVariableSchema from "./TagVariableSchema";
 
-abstract class DomVariableSchema extends TagVariableSchema {
+interface DomVariableSchema extends TagVariableSchema {
 
   readonly cssSelector: string;
 }

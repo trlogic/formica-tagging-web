@@ -1,4 +1,4 @@
-class EventSchema {
+interface EventSchema {
 
   readonly name: string;
 

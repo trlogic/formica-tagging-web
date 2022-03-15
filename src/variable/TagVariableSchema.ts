@@ -1,4 +1,6 @@
-abstract class TagVariableSchema {
+interface TagVariableSchema {
+
+  readonly type: string;
 
   readonly name: string;
 }

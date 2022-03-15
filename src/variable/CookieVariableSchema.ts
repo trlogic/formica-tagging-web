@@ -1,6 +1,6 @@
 import TagVariableSchema from "./TagVariableSchema";
 
-class CookieVariableSchema extends TagVariableSchema {
+interface CookieVariableSchema extends TagVariableSchema {
 
   readonly cookieName: string;
 

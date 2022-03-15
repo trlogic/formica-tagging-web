@@ -2,13 +2,13 @@ import TrackerClient from "./TrackerClient";
 import TrackerConfig from "../config/TrackerConfig";
 import Event from "../event/Event";
 import {Axios, AxiosRequestConfig, AxiosResponse} from "axios";
-import Tag from "../event/Tag";
+import TrackerSchema from "../event/TrackerSchema";
 
 class AxiosTrackerClient implements TrackerClient {
 
   private readonly trackerApiUrl: string
   private readonly axios: Axios;
-  private trackerConfig: TrackerConfig;
+  private trackerConfig?: TrackerConfig;
 
   private readonly queue: Array<Event>;
 
@@ -23,7 +23,7 @@ class AxiosTrackerClient implements TrackerClient {
     return new AxiosTrackerClient(trackerApiUrl, username, password);
   }
 
-  public getTags(): Array<Tag> {
+  public getTags(): Array<TrackerSchema> {
     return this.trackerConfig!.tags;
   }
 

@@ -1,6 +1,6 @@
 import TriggerSchema from "./TriggerSchema";
 
-class CustomTriggerSchema extends TriggerSchema {
+interface CustomTriggerSchema extends TriggerSchema {
 
   readonly name: string;
 }

@@ -1,8 +1,10 @@
 import Filter from "../filter/Filter";
 
-abstract class TriggerSchema {
+interface TriggerSchema {
 
-  readonly filter?: Filter;
+  readonly type: string;
+
+  readonly filters: Array<Filter>;
 }
 
 export default TriggerSchema

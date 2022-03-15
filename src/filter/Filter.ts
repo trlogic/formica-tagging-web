@@ -1,13 +1,13 @@
 import TagVariableSchema from "../variable/TagVariableSchema";
 import Operator from "./Operator";
 
-class Filter {
+interface Filter {
 
-  readonly left: Filter | TagVariableSchema | string
+  readonly left: TagVariableSchema
 
   readonly operator: Operator;
 
-  readonly right: Filter | TagVariableSchema | string
+  readonly right: string
 }
 
 export default Filter;

@@ -1,6 +1,6 @@
 import TagVariableSchema from "./TagVariableSchema";
 
-class JavascriptVariableSchema extends TagVariableSchema{
+interface JavascriptVariableSchema extends TagVariableSchema{
 
   readonly code: string;
 }

@@ -1,6 +1,6 @@
 import TriggerSchema from "./TriggerSchema";
 
-class ClickTriggerSchema extends TriggerSchema {
+interface ClickTriggerSchema extends TriggerSchema {
 }
 
 export default ClickTriggerSchema;

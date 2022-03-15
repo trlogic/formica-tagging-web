@@ -2,7 +2,7 @@ import TagVariableSchema from "../variable/TagVariableSchema";
 import TriggerSchema from "../trigger/TriggerSchema";
 import EventSchema from "./EventSchema";
 
-class Tag {
+interface TrackerSchema {
 
   readonly triggers: Array<TriggerSchema>;
 
@@ -11,4 +11,4 @@ class Tag {
   readonly event: EventSchema;
 }
 
-export default Tag;
+export default TrackerSchema;

@@ -9,13 +9,14 @@ import TagVariableSchema from "./variable/TagVariableSchema";
 import {resolveFilter, resolveVariable} from "./TrackerUtils";
 import Filter from "./filter/Filter";
 import Event from "./event/Event";
-import Tag from "./event/Tag";
+import TrackerSchema from "./event/TrackerSchema";
 import EventSchema from "./event/EventSchema";
 import UrlVariableSchema from "./variable/UrlVariableSchema";
 import CookieVariableSchema from "./variable/CookieVariableSchema";
 import JavascriptVariableSchema from "./variable/JavascriptVariableSchema";
 import ElementVisibilityVariableSchema from "./variable/ElementVisibilityVariableSchema";
 import ElementVariableSchema from "./variable/ElementVariableSchema";
+import filter from "./filter/Filter";
 
 class Tracker {
 
@@ -42,35 +43,35 @@ class Tracker {
     this.client.getTags().forEach(tag => this.initListeners(tag));
   }
 
-  private initListeners(tag: Tag): void {
+  private initListeners(tag: TrackerSchema): void {
     const eventSchema: EventSchema = tag.event;
     const tagVariableSchemas: Array<TagVariableSchema> = tag.variables;
 
     tag.triggers.forEach(triggerSchema => {
-      const filter: Filter | undefined = triggerSchema.filter;
+      const filters: Array<Filter> = triggerSchema.filters;
       if (triggerSchema instanceof ClickTriggerSchema) {
-        const callbackfn: EventHandler = (e, tagVariables: { [key: string]: string }) => this.handleClick(eventSchema, tagVariables);
-        this.addListener("click", filter, tagVariableSchemas, callbackfn)
+        const callbackfn: EventHandler = (e, tagVariables: { [key: string]: string }) => this.handleClick(triggerSchema, eventSchema, tagVariables);
+        this.addListener("click", filters, tagVariableSchemas, callbackfn)
       } else if (triggerSchema instanceof ScrollTriggerSchema) {
-        const callbackfn: EventHandler = (e, tagVariables: { [key: string]: string }) => this.handleScroll(eventSchema, tagVariables);
-        this.addListener("scroll", filter, tagVariableSchemas, callbackfn)
+        const callbackfn: EventHandler = (e, tagVariables: { [key: string]: string }) => this.handleScroll(triggerSchema, eventSchema, tagVariables);
+        this.addListener("scroll", filters, tagVariableSchemas, callbackfn)
       } else if (triggerSchema instanceof FormSubmissionTriggerSchema) {
-        const callbackfn: EventHandler = (e, tagVariables: { [key: string]: string }) => this.handleFormSubmission(eventSchema, tagVariables);
-        this.addListener("formsubmission", filter, tagVariableSchemas, callbackfn)
+        const callbackfn: EventHandler = (e, tagVariables: { [key: string]: string }) => this.handleFormSubmission(triggerSchema, eventSchema, tagVariables);
+        this.addListener("formsubmission", filters, tagVariableSchemas, callbackfn)
       } else if (triggerSchema instanceof PageViewTriggerSchema) {
-        const callbackfn: EventHandler = (e, tagVariables: { [key: string]: string }) => this.handlePageView(eventSchema, tagVariables);
-        this.addListener("pageview", filter, tagVariableSchemas, callbackfn);
+        const callbackfn: EventHandler = (e, tagVariables: { [key: string]: string }) => this.handlePageView(triggerSchema, eventSchema, tagVariables);
+        this.addListener("pageview", filters, tagVariableSchemas, callbackfn);
       } else if (triggerSchema instanceof CustomTriggerSchema) {
-        const callbackfn: EventHandler = (e, tagVariables: { [key: string]: string }) => this.handleCustom(eventSchema, tagVariables);
-        this.addListener(triggerSchema.name, filter, tagVariableSchemas, callbackfn);
+        const callbackfn: EventHandler = (e, tagVariables: { [key: string]: string }) => this.handleCustom(triggerSchema, eventSchema, tagVariables);
+        this.addListener(triggerSchema.name, filters, tagVariableSchemas, callbackfn);
       }
     });
   }
 
-  private addListener(type: string, filter: Filter | undefined, tagVariableSchemas: Array<TagVariableSchema>, callbackFn: EventHandler) {
+  private addListener(type: string, filters: Array<Filter>, tagVariableSchemas: Array<TagVariableSchema>, callbackFn: EventHandler) {
     document.addEventListener(type, (e) => {
       const tagVariables: { [key: string]: string } = this.resolveTagVariables(tagVariableSchemas);
-      if (filter == undefined || resolveFilter(filter, tagVariables)) {
+      if (filters.length == 0 || filters.every(filter => resolveFilter(filter, tagVariables))) {
         callbackFn(e, tagVariables);
       }
     });

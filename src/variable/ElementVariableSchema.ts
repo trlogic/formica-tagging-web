@@ -1,6 +1,6 @@
 import DomVariableSchema from "./DomVariableSchema";
 
-class ElementVariableSchema extends DomVariableSchema {
+interface ElementVariableSchema extends DomVariableSchema {
 
   readonly attribute?: string
 }

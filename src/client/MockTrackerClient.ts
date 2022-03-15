@@ -1,22 +1,21 @@
 import TrackerClient from "./TrackerClient";
 import Event from "../event/Event";
 import TrackerConfig from "../config/TrackerConfig";
-import Tag from "../event/Tag";
+import TrackerSchema from "../event/TrackerSchema";
 
 class MockTrackerClient implements TrackerClient {
 
   private trackerConfig?: TrackerConfig;
 
   private constructor() {
+    this.init();
   }
 
   public static create(): MockTrackerClient {
-    const client: TrackerClient = new MockTrackerClient();
-    client.init();
-    return client;
+    return new MockTrackerClient();
   }
 
-  public init(): void {
+  private init(): void {
     this.trackerConfig = {
       authServerUrl: "",
       httpEventGatewayUrl: "",
@@ -24,7 +23,7 @@ class MockTrackerClient implements TrackerClient {
     }
   }
 
-  public getTags(): Array<Tag> {
+  public getTags(): Array<TrackerSchema> {
     return this.trackerConfig!.tags;
   }
 
