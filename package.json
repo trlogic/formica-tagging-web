@@ -19,9 +19,12 @@
   "author": "Alperen Gözüm",
   "license": "ISC",
   "dependencies": {
-    "jquery": "^3.6.0"
+    "axios": "^0.26.1"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.21"
   }
 }
