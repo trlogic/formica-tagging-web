@@ -1,12 +1,9 @@
 {
   "compilerOptions": {
     "declaration": true,
-
     "strict": true,
     "strictNullChecks": true,
     "noImplicitAny": true,
-
-
     "target": "esNext",
     "outDir": "dist",
     "module": "commonjs",
