@@ -2,9 +2,10 @@
   "compilerOptions": {
     "declaration": true,
     "strict": true,
+    "stripInternal": true,
     "strictNullChecks": true,
     "noImplicitAny": true,
-    "target": "esNext",
+    "target": "es5",
     "outDir": "dist",
     "module": "commonjs",
     "moduleResolution": "node",
