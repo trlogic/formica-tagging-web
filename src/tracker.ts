@@ -25,31 +25,31 @@ const initListeners = (tracker: TrackerSchema): void => {
     switch (triggerSchema.type) {
       case "click": {
         const clickTriggerSchema: ClickTriggerSchema = triggerSchema as ClickTriggerSchema;
-        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleClick(mouseEvent, clickTriggerSchema, eventSchema, trackerVariables);
+        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleClick(clickTriggerSchema, eventSchema, trackerVariables);
         initListener("click", filters, trackerVariableSchemas, callbackfn)
         break;
       }
       case "scroll": {
         const scrollTriggerSchema: ScrollTriggerSchema = triggerSchema as ScrollTriggerSchema;
-        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleScroll(mouseEvent, scrollTriggerSchema, eventSchema, trackerVariables);
+        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleScroll(scrollTriggerSchema, eventSchema, trackerVariables);
         initListener("wheel", filters, trackerVariableSchemas, callbackfn)
         break;
       }
       case "submit": {
         const submitTriggerSchema: SubmitTriggerSchema = triggerSchema as SubmitTriggerSchema;
-        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleSubmit(mouseEvent, submitTriggerSchema, eventSchema, trackerVariables);
+        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleSubmit(submitTriggerSchema, eventSchema, trackerVariables);
         initListener("submit", filters, trackerVariableSchemas, callbackfn)
         break;
       }
       case "pageView": {
         const pageViewTriggerSchema: PageViewTriggerSchema = triggerSchema as PageViewTriggerSchema;
-        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handlePageView(mouseEvent, pageViewTriggerSchema, eventSchema, trackerVariables);
+        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handlePageView(pageViewTriggerSchema, eventSchema, trackerVariables);
         initListener("pageview", filters, trackerVariableSchemas, callbackfn);
         break;
       }
       case "custom": {
         const customTriggerSchema: CustomTriggerSchema = triggerSchema as CustomTriggerSchema;
-        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleCustom(mouseEvent, customTriggerSchema, eventSchema, trackerVariables);
+        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleCustom(customTriggerSchema, eventSchema, trackerVariables);
         initListener(customTriggerSchema.name, filters, trackerVariableSchemas, callbackfn);
         break;
       }
@@ -60,34 +60,34 @@ const initListeners = (tracker: TrackerSchema): void => {
 const initListener = (type: string, filters: Filter[], trackerVariableSchemas: TrackerVariableSchema[], callbackFn: EventHandler) => {
   document.addEventListener(type, (e) => {
     const trackerVariables: KeyValueMap = {};
-    trackerVariableSchemas.forEach(trackerVariableSchema => resolveTrackerVariable(trackerVariableSchema));
+    trackerVariableSchemas.forEach(trackerVariableSchema => resolveTrackerVariable(trackerVariableSchema, e as MouseEvent));
     if (filters.length == 0 || filters.every(filter => resolveFilter(filter, trackerVariables))) {
       callbackFn(e as MouseEvent, trackerVariables);
     }
   });
 };
 
-const handleClick = (mouseEvent: MouseEvent, triggerSchema: ClickTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
+const handleClick = (triggerSchema: ClickTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
   const event: Event = buildEvent(eventSchema, trackerVariables);
   sendEvent(event);
 };
 
-const handleScroll = (mouseEvent: MouseEvent, triggerSchema: ScrollTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
+const handleScroll = (triggerSchema: ScrollTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
   const event: Event = buildEvent(eventSchema, trackerVariables);
   sendEvent(event);
 };
 
-const handleSubmit = (mouseEvent: MouseEvent, triggerSchema: SubmitTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
+const handleSubmit = (triggerSchema: SubmitTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
   const event: Event = buildEvent(eventSchema, trackerVariables);
   sendEvent(event);
 };
 
-const handlePageView = (e: MouseEvent, triggerSchema: PageViewTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
+const handlePageView = (triggerSchema: PageViewTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
   const event: Event = buildEvent(eventSchema, trackerVariables);
   sendEvent(event);
 };
 
-const handleCustom = (mouseEvent: MouseEvent, triggerSchema: CustomTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
+const handleCustom = (triggerSchema: CustomTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
   const event: Event = buildEvent(eventSchema, trackerVariables);
   sendEvent(event);
 };
@@ -191,8 +191,8 @@ interface CustomTriggerSchema extends TriggerSchema {
 
 
 //  ******************** TRACKER VARIABLE ********************
-declare type TriggerVariableType = "element" | "id" | "class" | "target" | "url" | "text";
-declare type TrackerVariableType = "url" | "cookie" | "element" | "visibility" | "javascript"; // | "ip" | "location"  |  "os" | "browser";
+declare type TriggerVariableType = "element" | "text" | "attribute";
+declare type TrackerVariableType = "url" | "cookie" | "element" | "visibility" | "javascript" | "trigger"; // | "ip" | "location"  |  "os" | "browser";
 declare type URLSelection = "full" | "host" | "port" | "path" | "query" | "fragment" | "protocol";
 
 interface TrackerVariableSchema {
@@ -225,15 +225,11 @@ interface JavascriptVariableSchema extends TrackerVariableSchema {
   readonly code: string;
 }
 
-interface TriggerVariableTypeSchema {
-  readonly type: TriggerVariableType;
+interface TriggerVariableSchema extends TrackerVariableSchema {
+  readonly variableType: TriggerVariableType;
   readonly attribute?: string;
   readonly text?: boolean;
   readonly selection?: URLSelection;
-}
-
-interface TriggerVariableSchema extends TrackerVariableSchema {
-  readonly variableType: TriggerVariableTypeSchema;
 }
 
 
@@ -313,7 +309,7 @@ const calculateFilter = (leftValue: string, rightValue: string, operator: Operat
 
 // -----
 
-const resolveTrackerVariable = (trackerVariableSchema: TrackerVariableSchema): string => {
+const resolveTrackerVariable = (trackerVariableSchema: TrackerVariableSchema, mouseEvent: MouseEvent): string => {
   switch (trackerVariableSchema.type) {
     case "url":
       return resolveUrlVariable(trackerVariableSchema as UrlVariableSchema);
@@ -325,6 +321,8 @@ const resolveTrackerVariable = (trackerVariableSchema: TrackerVariableSchema): s
       return resolveVisibilityVariable(trackerVariableSchema as VisibilityVariableSchema);
     case "javascript":
       return resolveJavascriptVariable(trackerVariableSchema as JavascriptVariableSchema)
+    case "trigger":
+      return resolveTriggerVariable(trackerVariableSchema as TriggerVariableSchema, mouseEvent)
     default :
       return "";
   }
@@ -369,16 +367,32 @@ const resolveElementVariable = (elementVariableSchema: ElementVariableSchema): s
   return !element ? "" : !elementVariableSchema.attribute ? element.textContent ?? "" : element.getAttribute(elementVariableSchema.attribute) ?? "";
 }
 
-const resolveVisibilityVariable = (visibilityVariableSchema: VisibilityVariableSchema) => {
+const resolveVisibilityVariable = (visibilityVariableSchema: VisibilityVariableSchema): string => {
   return ""; //TODO yapılacak
 }
 
-const resolveJavascriptVariable = (javascriptVariableSchema: JavascriptVariableSchema) => {
+const resolveJavascriptVariable = (javascriptVariableSchema: JavascriptVariableSchema): string => {
   try {
     return eval(javascriptVariableSchema.code) ?? "";
   } catch (error) {
     console.error(error);
     return "";
+  }
+}
+
+const resolveTriggerVariable = (triggerVariableSchema: TriggerVariableSchema, mouseEvent: MouseEvent): string => {
+  const type: TriggerVariableType = triggerVariableSchema.variableType;
+  switch (type) {
+    case "element":
+      return "";
+    case "text":
+      // @ts-ignore
+      return !mouseEvent!.target ? "" : mouseEvent.target.innerText;
+    case "attribute":
+      // @ts-ignore
+      return !mouseEvent!.target ? "" : mouseEvent.target.getAttribute(triggerVariableSchema.attribute);
+    default:
+      return "";
   }
 }
 
