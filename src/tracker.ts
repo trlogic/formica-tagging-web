@@ -12,85 +12,38 @@ const trackerConfig: TrackerConfig = {
 }
 
 export const run = (): void => {
-  trackerConfig.trackers.forEach(tracker => initListeners(tracker));
+  trackerConfig.trackers.forEach(tracker => tracker.triggers.forEach(triggerSchema => initListener(triggerSchema, tracker.variables, tracker.event)));
 };
 
 //  ******************** EVENT HANDLERS  ********************
-const initListeners = (tracker: TrackerSchema): void => {
-  const eventSchema: EventSchema = tracker.event;
-  const trackerVariableSchemas: TrackerVariableSchema[] = tracker.variables;
 
-  tracker.triggers.forEach(triggerSchema => {
-    const filters: Filter[] = triggerSchema.filters;
-    switch (triggerSchema.type) {
-      case "click": {
-        const clickTriggerSchema: ClickTriggerSchema = triggerSchema as ClickTriggerSchema;
-        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleClick(clickTriggerSchema, eventSchema, trackerVariables);
-        initListener("click", filters, trackerVariableSchemas, callbackfn)
-        break;
-      }
-      case "scroll": {
-        const scrollTriggerSchema: ScrollTriggerSchema = triggerSchema as ScrollTriggerSchema;
-        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleScroll(scrollTriggerSchema, eventSchema, trackerVariables);
-        initListener("wheel", filters, trackerVariableSchemas, callbackfn)
-        break;
-      }
-      case "submit": {
-        const submitTriggerSchema: SubmitTriggerSchema = triggerSchema as SubmitTriggerSchema;
-        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleSubmit(submitTriggerSchema, eventSchema, trackerVariables);
-        initListener("submit", filters, trackerVariableSchemas, callbackfn)
-        break;
-      }
-      case "pageView": {
-        const pageViewTriggerSchema: PageViewTriggerSchema = triggerSchema as PageViewTriggerSchema;
-        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handlePageView(pageViewTriggerSchema, eventSchema, trackerVariables);
-        initListener("pageview", filters, trackerVariableSchemas, callbackfn);
-        break;
-      }
-      case "custom": {
-        const customTriggerSchema: CustomTriggerSchema = triggerSchema as CustomTriggerSchema;
-        const callbackfn: EventHandler = (mouseEvent, trackerVariables) => handleCustom(customTriggerSchema, eventSchema, trackerVariables);
-        initListener(customTriggerSchema.name, filters, trackerVariableSchemas, callbackfn);
-        break;
-      }
-    }
-  });
-};
-
-const initListener = (type: string, filters: Filter[], trackerVariableSchemas: TrackerVariableSchema[], callbackFn: EventHandler) => {
-  document.addEventListener(type, (e) => {
+const initListener = (triggerSchema: TriggerSchema, trackerVariableSchemas: TrackerVariableSchema[], eventSchema: EventSchema) => {
+  document.addEventListener(triggerSchema.name, (e) => {
     const trackerVariables: KeyValueMap = {};
     trackerVariableSchemas.forEach(trackerVariableSchema => resolveTrackerVariable(trackerVariableSchema, e as MouseEvent));
-    if (filters.length == 0 || filters.every(filter => resolveFilter(filter, trackerVariables))) {
-      callbackFn(e as MouseEvent, trackerVariables);
+
+    const validated: boolean = validate(e as MouseEvent, triggerSchema, trackerVariables);
+    if (validated) {
+      const event: Event = buildEvent(eventSchema, trackerVariables);
+      sendEvent(event);
     }
   });
 };
 
-const handleClick = (triggerSchema: ClickTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
-  const event: Event = buildEvent(eventSchema, trackerVariables);
-  sendEvent(event);
-};
+const validate = (e: MouseEvent, triggerSchema: TriggerSchema, trackerVariables: KeyValueMap): boolean => {
+  switch (triggerSchema.name) {
+    case "click":
+      const clickOption: ClickOption = triggerSchema.option as ClickOption;
+      // @ts-ignore
+      if (clickOption.justLinks && e.target.hasAttribute("href")) return false;
+      else break;
+    case "scroll":
+      // TODO horizontal ve vertical flag kontrolleri yapılacak
+      break
+  }
 
-const handleScroll = (triggerSchema: ScrollTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
-  const event: Event = buildEvent(eventSchema, trackerVariables);
-  sendEvent(event);
-};
-
-const handleSubmit = (triggerSchema: SubmitTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
-  const event: Event = buildEvent(eventSchema, trackerVariables);
-  sendEvent(event);
-};
-
-const handlePageView = (triggerSchema: PageViewTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
-  const event: Event = buildEvent(eventSchema, trackerVariables);
-  sendEvent(event);
-};
-
-const handleCustom = (triggerSchema: CustomTriggerSchema, eventSchema: EventSchema, trackerVariables: KeyValueMap) => {
-  const event: Event = buildEvent(eventSchema, trackerVariables);
-  sendEvent(event);
-};
+  return triggerSchema.filters.length == 0 || triggerSchema.filters.every(filter => resolveFilter(filter, trackerVariables));
+}
 
 
 //  ******************** CLIENT ********************
@@ -104,143 +57,91 @@ const sendEvent = (event: Event) => {
 
 //  ******************** CONFIG ********************
 interface TrackerConfig {
-  readonly trackers: TrackerSchema[];
-  readonly httpEventGatewayUrl: string;
-  readonly authServerUrl: string;
+  trackers: TrackerSchema[];
+  httpEventGatewayUrl: string;
+  authServerUrl: string;
 }
 
 //  ******************** EVENT ********************
 interface Event {
-  readonly name: string;
-  readonly actor: string;
-  readonly variables: { [key: string]: string | number | boolean }
+  name: string;
+  actor: string;
+  variables: { [key: string]: string | number | boolean }
 }
 
 interface EventSchema {
-  readonly name: string;
-  readonly actorMapping: string;
-  readonly variableMappings: { name: string, value: string }[]
+  name: string;
+  actorMapping: string;
+  variableMappings: { name: string, value: string }[]
 }
 
 interface TrackerSchema {
-  readonly triggers: TriggerSchema[];
-  readonly variables: TrackerVariableSchema[];
-  readonly event: EventSchema;
+  triggers: TriggerSchema[];
+  variables: TrackerVariableSchema[];
+  event: EventSchema;
 }
 
 
 //  ******************** TRIGGER ********************
-declare type TriggerType = "click" | "scroll" | "submit" | "pageView" | "custom";
 declare type Operator =
-  "isEquals"
-  | "isEqualsIgnoreCase"
-  | "notEquals"
-  | "notEqualsIgnoreCase"
-  | "isContains"
-  | "isContainsIgnoreCase"
-  | "notContains"
-  | "notContainsIgnoreCase"
-  | "isStartsWith"
-  | "isStartsWithIgnoreCase"
-  | "notStartsWith"
-  | "notStartsWithIgnoreCase"
-  | "isEndsWith"
-  | "isEndsWithIgnoreCase"
-  | "notEndsWith"
-  | "notEndsWithIgnoreCase"
-  | "isRegexMatch"
-  | "isRegexMatchIgnoreCase"
-  | "notRegexMatch"
-  | "notRegexMatchIgnoreCase"
-  | "lessThan"
-  | "lessThanOrEquals"
-  | "greaterThan"
-  | "greaterThanOrEquals";
-
+  "isEquals" | "isEqualsIgnoreCase" | "notEquals" | "notEqualsIgnoreCase" |
+  "isContains" | "isContainsIgnoreCase" | "notContains" | "notContainsIgnoreCase" |
+  "isStartsWith" | "isStartsWithIgnoreCase" | "notStartsWith" | "notStartsWithIgnoreCase" |
+  "isEndsWith" | "isEndsWithIgnoreCase" | "notEndsWith" | "notEndsWithIgnoreCase" |
+  "isRegexMatch" | "isRegexMatchIgnoreCase" | "notRegexMatch" | "notRegexMatchIgnoreCase" |
+  "lessThan" | "lessThanOrEquals" | "greaterThan" | "greaterThanOrEquals";
 
 interface Filter {
-  readonly left: TrackerVariableSchema
-  readonly operator: Operator;
-  readonly right: string
+  left: TrackerVariableSchema
+  operator: Operator;
+  right: string
 }
+
+declare type ClickOption = { justLinks: boolean }
+declare type ScrollOptions = { horizontal: boolean; vertical: boolean; }
 
 interface TriggerSchema {
-  readonly type: TriggerType;
-  readonly filters: Filter[];
+  name: string;
+  filters: Filter[];
+  option: ClickOption | ScrollOptions,
 }
-
-interface ClickTriggerSchema extends TriggerSchema {
-  justLinks: boolean;
-}
-
-interface PageViewTriggerSchema extends TriggerSchema {
-}
-
-interface SubmitTriggerSchema extends TriggerSchema {
-  readonly onlyValid: boolean;
-}
-
-interface ScrollTriggerSchema extends TriggerSchema {
-  readonly horizontal: boolean;
-  readonly vertical: boolean;
-}
-
-interface CustomTriggerSchema extends TriggerSchema {
-  readonly name: string;
-}
-
 
 //  ******************** TRACKER VARIABLE ********************
-declare type TriggerVariableType = "element" | "text" | "attribute";
 declare type TrackerVariableType = "url" | "cookie" | "element" | "visibility" | "javascript" | "trigger"; // | "ip" | "location"  |  "os" | "browser";
+declare type TriggerVariableType = "element" | "history";
 declare type URLSelection = "full" | "host" | "port" | "path" | "query" | "fragment" | "protocol";
+declare type HistorySelection = "newUrl" | "oldUrl" | "newState" | "oldState" | "changeSource";
+
+declare type HistoryOption = { selection: HistorySelection };
+declare type ElementOption = { cssSelector: string, attribute?: string, urlSelection?: UrlOption }
+declare type VisibilityOption = { cssSelector: string, thresholdPercentage: number }
+declare type UrlOption = { selection: URLSelection }
+declare type CookieOption = { cookieName: string; decodeUrlCookie: boolean; }
+declare type JavascriptOption = { code: string; }
+declare type TriggerOption = { type: TriggerVariableType, option: ElementOption | HistoryOption }
 
 interface TrackerVariableSchema {
-  readonly type: TrackerVariableType;
-  readonly name: string;
-}
-
-interface DomVariableSchema extends TrackerVariableSchema {
-  readonly cssSelector: string;
-}
-
-interface ElementVariableSchema extends DomVariableSchema {
-  readonly attribute?: string
-}
-
-interface VisibilityVariableSchema extends DomVariableSchema {
-  readonly thresholdPercentage: number;
-}
-
-interface UrlVariableSchema extends TrackerVariableSchema {
-  readonly selection: URLSelection
-}
-
-interface CookieVariableSchema extends TrackerVariableSchema {
-  readonly cookieName: string;
-  readonly decodeUrlCookie: boolean;
-}
-
-interface JavascriptVariableSchema extends TrackerVariableSchema {
-  readonly code: string;
+  type: TrackerVariableType;
+  name: string;
+  option: ElementOption | VisibilityOption | UrlOption | CookieOption | JavascriptOption | TriggerOption;
 }
 
 interface TriggerVariableSchema extends TrackerVariableSchema {
-  readonly variableType: TriggerVariableType;
-  readonly attribute?: string;
-  readonly text?: boolean;
-  readonly selection?: URLSelection;
+  variableType: TriggerVariableType;
+  attribute?: string;
+  text?: boolean;
+  selection?: URLSelection;
 }
 
 
 // ******************** TRACKER UTILS ********************
-const resolveFilter = (filter: Filter, variables: { [key: string]: string }): boolean => {
+const resolveFilter = (filter: Filter, variables: KeyValueMap): boolean => {
   const leftValue: string = resolveToken(filter.left, variables);
   const rightValue: string = resolveToken(filter.right, variables);
   return calculateFilter(leftValue, rightValue, filter.operator);
 }
 
-const resolveToken = (token: TrackerVariableSchema | string, variables: { [key: string]: string }): string => {
+const resolveToken = (token: TrackerVariableSchema | string, variables: KeyValueMap): string => {
   return typeof token == "object" ? variables[(token as TrackerVariableSchema).name] : token;
 }
 
@@ -312,25 +213,26 @@ const calculateFilter = (leftValue: string, rightValue: string, operator: Operat
 const resolveTrackerVariable = (trackerVariableSchema: TrackerVariableSchema, mouseEvent: MouseEvent): string => {
   switch (trackerVariableSchema.type) {
     case "url":
-      return resolveUrlVariable(trackerVariableSchema as UrlVariableSchema);
+      return resolveUrlVariable(trackerVariableSchema);
     case "cookie":
-      return resolveCookieVariable(trackerVariableSchema as CookieVariableSchema);
+      return resolveCookieVariable(trackerVariableSchema);
     case "element":
-      return resolveElementVariable(trackerVariableSchema as ElementVariableSchema)
+      return resolveElementVariable(trackerVariableSchema)
     case "visibility":
-      return resolveVisibilityVariable(trackerVariableSchema as VisibilityVariableSchema);
+      return resolveVisibilityVariable(trackerVariableSchema);
     case "javascript":
-      return resolveJavascriptVariable(trackerVariableSchema as JavascriptVariableSchema)
+      return resolveJavascriptVariable(trackerVariableSchema)
     case "trigger":
-      return resolveTriggerVariable(trackerVariableSchema as TriggerVariableSchema, mouseEvent)
+      return resolveTriggerVariable(trackerVariableSchema, mouseEvent)
     default :
       return "";
   }
 };
 
-const resolveUrlVariable = (urlVariableSchema: UrlVariableSchema): string => {
+const resolveUrlVariable = (trackerVariableSchema: TrackerVariableSchema): string => {
   const location: Location = window.location;
-  switch (urlVariableSchema.selection) {
+  const option: UrlOption = trackerVariableSchema.option as UrlOption;
+  switch (option.selection) {
     case "full":
       return location.href;
     case "host":
@@ -351,46 +253,54 @@ const resolveUrlVariable = (urlVariableSchema: UrlVariableSchema): string => {
   }
 }
 
-const resolveCookieVariable = (cookieVariableSchema: CookieVariableSchema): string => {
-  const cookieName: string = cookieVariableSchema.cookieName;
+const resolveCookieVariable = (trackerVariableSchema: TrackerVariableSchema): string => {
+  const option: CookieOption = trackerVariableSchema.option as CookieOption;
+  const cookieName: string = option.cookieName;
 
   const cookies: string[] = document.cookie.split(';')
     .map(cookie => cookie.trim())
     .filter(cookie => cookie.substring(0, cookieName.length) == cookieName)
-    .map(cookie => cookieVariableSchema.decodeUrlCookie ? decodeURIComponent(cookie.substring(cookieName.length)) : cookie);
+    .map(cookie => option.decodeUrlCookie ? decodeURIComponent(cookie.substring(cookieName.length)) : cookie);
 
   return cookies[0] ?? "";
 }
 
-const resolveElementVariable = (elementVariableSchema: ElementVariableSchema): string => {
-  const element: Element | null = document.querySelector(elementVariableSchema.cssSelector);
-  return !element ? "" : !elementVariableSchema.attribute ? element.textContent ?? "" : element.getAttribute(elementVariableSchema.attribute) ?? "";
+const resolveElementVariable = (trackerVariableSchema: TrackerVariableSchema): string => {
+  const option: ElementOption = trackerVariableSchema.option as ElementOption;
+  const element: Element | null = document.querySelector(option.cssSelector);
+  return !element ? "" : !option.attribute ? element.textContent ?? "" : element.getAttribute(option.attribute) ?? "";
 }
 
-const resolveVisibilityVariable = (visibilityVariableSchema: VisibilityVariableSchema): string => {
+const resolveVisibilityVariable = (trackerVariableSchema: TrackerVariableSchema): string => {
+  const option: VisibilityOption = trackerVariableSchema.option as VisibilityOption;
   return ""; //TODO yapılacak
 }
 
-const resolveJavascriptVariable = (javascriptVariableSchema: JavascriptVariableSchema): string => {
+const resolveJavascriptVariable = (trackerVariableSchema: TrackerVariableSchema): string => {
+  const option: JavascriptOption = trackerVariableSchema.option as JavascriptOption;
   try {
-    return eval(javascriptVariableSchema.code) ?? "";
+    return eval(option.code) ?? "";
   } catch (error) {
     console.error(error);
     return "";
   }
 }
 
-const resolveTriggerVariable = (triggerVariableSchema: TriggerVariableSchema, mouseEvent: MouseEvent): string => {
-  const type: TriggerVariableType = triggerVariableSchema.variableType;
-  switch (type) {
-    case "element":
+const resolveTriggerVariable = (trackerVariableSchema: TrackerVariableSchema, mouseEvent: MouseEvent): string => {
+  const option: TriggerOption = trackerVariableSchema.option as TriggerOption;
+  switch (option.type) {
+    case "element": {
+      const elementOption: ElementOption = option.option as ElementOption;
+      const parent: Element = document.createElement("div") as Element;
+      parent.append(mouseEvent.target as Element);
+      const element: Element = parent.querySelector(elementOption.cssSelector) as Element;
+      // @ts-ignore
+      return !element ? !elementOption.attribute ? element.getAttribute(elementOption.attribute) : element.innerText : "";
+    }
+    case "history": {
+      //TODO yapılacak
       return "";
-    case "text":
-      // @ts-ignore
-      return !mouseEvent!.target ? "" : mouseEvent.target.innerText;
-    case "attribute":
-      // @ts-ignore
-      return !mouseEvent!.target ? "" : mouseEvent.target.getAttribute(triggerVariableSchema.attribute);
+    }
     default:
       return "";
   }
@@ -398,15 +308,15 @@ const resolveTriggerVariable = (triggerVariableSchema: TriggerVariableSchema, mo
 
 // -----
 
-const buildEvent = (eventSchema: EventSchema, trackerVariables: { [key: string]: string }): Event => {
+const buildEvent = (eventSchema: EventSchema, trackerVariables: KeyValueMap): Event => {
   const name: string = eventSchema.name;
   const actor: string = resolveMapping(eventSchema.actorMapping, trackerVariables);
-  const variables: { [key: string]: string } = {};
+  const variables: KeyValueMap = {};
   eventSchema.variableMappings.forEach(variableMapping => variables[variableMapping.name] = resolveMapping(variableMapping.value, trackerVariables));
   return {name, actor, variables}
 };
 
-const resolveMapping = (mapping: string, trackerVariables: { [key: string]: string }): string => {
+const resolveMapping = (mapping: string, trackerVariables: KeyValueMap): string => {
   const matches: string[] = findMatches(mapping, /`.*?`/g);
   matches.forEach(match => {
     const variableName: string = match.substring(1, match.length - 1);
