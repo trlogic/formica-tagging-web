@@ -20,7 +20,9 @@ export const run = (): void => {
 const initListener = (triggerSchema: TriggerSchema, trackerVariableSchemas: TrackerVariableSchema[], eventSchema: EventSchema) => {
   document.addEventListener(triggerSchema.name, (e) => {
     const trackerVariables: KeyValueMap = {};
-    trackerVariableSchemas.forEach(trackerVariableSchema => resolveTrackerVariable(trackerVariableSchema, e as MouseEvent));
+    trackerVariableSchemas.forEach(trackerVariableSchema => {
+      trackerVariables[trackerVariableSchema.name]=resolveTrackerVariable(trackerVariableSchema, e as MouseEvent)
+    });
 
     const validated: boolean = validate(e as MouseEvent, triggerSchema, trackerVariables);
     if (validated) {
@@ -35,7 +37,7 @@ const validate = (e: MouseEvent, triggerSchema: TriggerSchema, trackerVariables:
     case "click":
       const clickOption: ClickOption = triggerSchema.option as ClickOption;
       // @ts-ignore
-      if (clickOption.justLinks && e.target.hasAttribute("href")) return false;
+      if (clickOption.justLinks && !e.target.hasAttribute("href")) return false;
       else break;
     case "scroll":
       // TODO horizontal ve vertical flag kontrolleri yapılacak
@@ -256,7 +258,6 @@ const resolveUrlVariable = (trackerVariableSchema: TrackerVariableSchema): strin
 const resolveCookieVariable = (trackerVariableSchema: TrackerVariableSchema): string => {
   const option: CookieOption = trackerVariableSchema.option as CookieOption;
   const cookieName: string = option.cookieName;
-
   const cookies: string[] = document.cookie.split(';')
     .map(cookie => cookie.trim())
     .filter(cookie => cookie.substring(0, cookieName.length) == cookieName)
@@ -292,10 +293,10 @@ const resolveTriggerVariable = (trackerVariableSchema: TrackerVariableSchema, mo
     case "element": {
       const elementOption: ElementOption = option.option as ElementOption;
       const parent: Element = document.createElement("div") as Element;
-      parent.append(mouseEvent.target as Element);
+      parent.append(mouseEvent.target.cloneNode(true));
       const element: Element = parent.querySelector(elementOption.cssSelector) as Element;
       // @ts-ignore
-      return !element ? !elementOption.attribute ? element.getAttribute(elementOption.attribute) : element.innerText : "";
+      return element ? elementOption.attribute ? element.getAttribute(elementOption.attribute) : element.innerText : "";
     }
     case "history": {
       //TODO yapılacak
@@ -321,7 +322,7 @@ const resolveMapping = (mapping: string, trackerVariables: KeyValueMap): string 
   matches.forEach(match => {
     const variableName: string = match.substring(1, match.length - 1);
     const variableValue: string = trackerVariables[variableName];
-    mapping.replace(match, variableValue);
+    mapping = mapping.replace(match, variableValue);
   });
 
   return mapping;
