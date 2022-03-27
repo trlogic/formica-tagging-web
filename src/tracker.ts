@@ -1,10 +1,11 @@
 //  ******************** TRACKER  ********************
 import {Axios} from "axios";
 
-declare type EventHandler = (mouseEvent: MouseEvent, variableValues: KeyValueMap) => void;
 declare type KeyValueMap = { [key: string]: string };
 
-const axios: Axios = new Axios();
+const axios: Axios = new Axios({headers: {"Content-Type": "application/json"}});
+const eventQueue: Event[] = [];
+
 const trackerConfig: TrackerConfig = {
   authServerUrl: "",
   httpEventGatewayUrl: "",
@@ -12,8 +13,25 @@ const trackerConfig: TrackerConfig = {
 }
 
 export const run = (): void => {
+  initClientWorker();
   trackerConfig.trackers.forEach(tracker => tracker.triggers.forEach(triggerSchema => initListener(triggerSchema, tracker.variables, tracker.event)));
 };
+
+const initClientWorker = () => {
+  setInterval(args => {
+
+    const events: Event[] = [];
+    while (eventQueue.length > 0) {
+      const event: Event = eventQueue.pop()!;
+      events.push(event);
+    }
+
+    if (events.length > 0) {
+      //axios.post("http://localhost:8081/event-listener/event/send-events/trlogic", JSON.stringify({events}));
+    }
+
+  }, 3000);
+}
 
 //  ******************** EVENT HANDLERS  ********************
 
@@ -21,7 +39,7 @@ const initListener = (triggerSchema: TriggerSchema, trackerVariableSchemas: Trac
   document.addEventListener(triggerSchema.name, (e) => {
     const trackerVariables: KeyValueMap = {};
     trackerVariableSchemas.forEach(trackerVariableSchema => {
-      trackerVariables[trackerVariableSchema.name]=resolveTrackerVariable(trackerVariableSchema, e as MouseEvent)
+      trackerVariables[trackerVariableSchema.name] = resolveTrackerVariable(trackerVariableSchema, e as MouseEvent)
     });
 
     const validated: boolean = validate(e as MouseEvent, triggerSchema, trackerVariables);
@@ -44,18 +62,13 @@ const validate = (e: MouseEvent, triggerSchema: TriggerSchema, trackerVariables:
       break
   }
 
-  return triggerSchema.filters.length == 0 || triggerSchema.filters.every(filter => resolveFilter(filter, trackerVariables));
+  return triggerSchema.filters.length == 0 || triggerSchema.filters.every(filter => calculateFilter(filter, trackerVariables));
 }
-
 
 //  ******************** CLIENT ********************
 const sendEvent = (event: Event) => {
-  /*
-    axios code
-   */
-  console.log(event);
+  eventQueue.push(event);
 }
-
 
 //  ******************** CONFIG ********************
 interface TrackerConfig {
@@ -94,7 +107,7 @@ declare type Operator =
   "lessThan" | "lessThanOrEquals" | "greaterThan" | "greaterThanOrEquals";
 
 interface Filter {
-  left: TrackerVariableSchema
+  left: string
   operator: Operator;
   right: string
 }
@@ -137,18 +150,12 @@ interface TriggerVariableSchema extends TrackerVariableSchema {
 
 
 // ******************** TRACKER UTILS ********************
-const resolveFilter = (filter: Filter, variables: KeyValueMap): boolean => {
-  const leftValue: string = resolveToken(filter.left, variables);
-  const rightValue: string = resolveToken(filter.right, variables);
-  return calculateFilter(leftValue, rightValue, filter.operator);
-}
 
-const resolveToken = (token: TrackerVariableSchema | string, variables: KeyValueMap): string => {
-  return typeof token == "object" ? variables[(token as TrackerVariableSchema).name] : token;
-}
+const calculateFilter = (filter: Filter, variables: KeyValueMap): boolean => {
+  const leftValue: string = variables[filter.left];
+  const rightValue: string = filter.right;
 
-const calculateFilter = (leftValue: string, rightValue: string, operator: Operator): boolean => {
-  switch (operator) {
+  switch (filter.operator) {
     case "isEquals":
       return leftValue == rightValue;
     case "isEqualsIgnoreCase":
@@ -249,7 +256,7 @@ const resolveUrlVariable = (trackerVariableSchema: TrackerVariableSchema): strin
       let parts: string[] = location.href.split("#");
       return parts.length > 1 ? parts[1] : "";
     case "protocol":
-      return location.search.substring(0, location.search.length - 2);
+      return location.protocol.substring(0, location.protocol.length - 1);
     default:
       return "";
   }
@@ -293,6 +300,7 @@ const resolveTriggerVariable = (trackerVariableSchema: TrackerVariableSchema, mo
     case "element": {
       const elementOption: ElementOption = option.option as ElementOption;
       const parent: Element = document.createElement("div") as Element;
+      // @ts-ignore
       parent.append(mouseEvent.target.cloneNode(true));
       const element: Element = parent.querySelector(elementOption.cssSelector) as Element;
       // @ts-ignore
@@ -308,7 +316,6 @@ const resolveTriggerVariable = (trackerVariableSchema: TrackerVariableSchema, mo
 }
 
 // -----
-
 const buildEvent = (eventSchema: EventSchema, trackerVariables: KeyValueMap): Event => {
   const name: string = eventSchema.name;
   const actor: string = resolveMapping(eventSchema.actorMapping, trackerVariables);
