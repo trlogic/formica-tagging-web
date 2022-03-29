@@ -8,7 +8,7 @@ const eventQueue: Event[] = [];
 
 const trackerConfig: TrackerConfig = {
   authServerUrl: "",
-  httpEventGatewayUrl: "",
+  eventApiUrl: "",
   trackers: []
 }
 
@@ -29,7 +29,6 @@ const initClientWorker = () => {
     if (events.length > 0) {
       //axios.post("http://localhost:8081/event-listener/event/send-events/trlogic", JSON.stringify({events}));
     }
-
   }, 3000);
 }
 
@@ -73,7 +72,7 @@ const sendEvent = (event: Event) => {
 //  ******************** CONFIG ********************
 interface TrackerConfig {
   trackers: TrackerSchema[];
-  httpEventGatewayUrl: string;
+  eventApiUrl: string;
   authServerUrl: string;
 }
 
