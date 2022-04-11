@@ -1,10 +1,15 @@
 //  ******************** TRACKER  ********************
-import {Axios} from "axios";
+import axios, {AxiosInstance} from "axios";
 
-declare type KeyValueMap = { [key: string]: string };
-
-const axios: Axios = new Axios({headers: {"Content-Type": "application/json"}});
-const eventQueue: Event[] = [];
+declare type KeyValueMap<T = string> = { [key: string]: T };
+declare type TrackerPayload = Event;
+declare type TrackerResponse = {
+  authServerUrl: string;
+  eventApiUrl: string,
+  trackers: Array<TrackerSchema>
+}
+const _axios: AxiosInstance = axios.create({headers: {"Content-Type": "application/json"}});
+const eventQueue: TrackerPayload[] = [];
 
 const trackerConfig: TrackerConfig = {
   authServerUrl: "",
@@ -12,24 +17,63 @@ const trackerConfig: TrackerConfig = {
   trackers: []
 }
 
-export const run = (): void => {
-  initClientWorker();
-  trackerConfig.trackers.forEach(tracker => tracker.triggers.forEach(triggerSchema => initListener(triggerSchema, tracker.variables, tracker.event)));
-};
+let timerInstance: any = undefined;
+
+const globalVariables: KeyValueMap<any> = {
+  screenViewDuration: 0
+}
+
+export namespace FormicaTracker {
+  export const run = async (serviceUrl: string): Promise<void> => {
+    await getTrackers(serviceUrl);
+    initClientWorker();
+    initTimer();
+    trackerConfig.trackers.forEach(tracker => tracker.triggers.forEach(triggerSchema => initListener(triggerSchema, tracker.variables, tracker.event)));
+  };
+
+  export const track = (payload: TrackerPayload) => {
+    eventQueue.push(payload);
+  }
+}
+
+const getTrackers = async (serviceUrl: string) => {
+  try {
+    const config = await _axios.get<TrackerResponse>(`${serviceUrl}/formicabox/activity-monitoring-service/v1/tracker/get-config`)
+    trackerConfig.trackers = config.data.trackers.filter(tracker => tracker.platform == "Web");
+    trackerConfig.eventApiUrl = `${config.data.eventApiUrl}/event-listener/event/send-event/moneybo/async`;
+    trackerConfig.authServerUrl = config.data.authServerUrl;
+  } catch (e) {
+    console.error("Formica tracker config couldn't get", e);
+  }
+}
 
 const initClientWorker = () => {
-  setInterval(args => {
+  setInterval(() => {
 
-    const events: Event[] = [];
+    const events: TrackerPayload[] = [];
     while (eventQueue.length > 0) {
-      const event: Event = eventQueue.pop()!;
+      const event: TrackerPayload = eventQueue.pop()!;
       events.push(event);
     }
 
     if (events.length > 0) {
-      //axios.post("http://localhost:8081/event-listener/event/send-events/trlogic", JSON.stringify({events}));
+      _axios.post(trackerConfig.eventApiUrl, {events});
     }
   }, 3000);
+}
+
+//  ******************** TIMER  ********************
+
+const initTimer = () => {
+  timerInstance = setInterval(timerHandler, 100);
+}
+
+const resetTimer = () => {
+  globalVariables.viewDuration = 0;
+}
+
+const timerHandler = () => {
+  globalVariables.viewDuration += 100;
 }
 
 //  ******************** EVENT HANDLERS  ********************
@@ -72,29 +116,38 @@ const sendEvent = (event: Event) => {
 //  ******************** CONFIG ********************
 interface TrackerConfig {
   trackers: TrackerSchema[];
+
   eventApiUrl: string;
+
   authServerUrl: string;
 }
 
 //  ******************** EVENT ********************
 interface Event {
   name: string;
+
   actor: string;
+
   variables: { [key: string]: string | number | boolean }
 }
 
 interface EventSchema {
   name: string;
+
   actorMapping: string;
+
   variableMappings: { name: string, value: string }[]
 }
 
 interface TrackerSchema {
   triggers: TriggerSchema[];
-  variables: TrackerVariableSchema[];
-  event: EventSchema;
-}
 
+  variables: TrackerVariableSchema[];
+
+  event: EventSchema;
+
+  platform: "Web" | "ReactNative"
+}
 
 //  ******************** TRIGGER ********************
 declare type Operator =
@@ -107,7 +160,9 @@ declare type Operator =
 
 interface Filter {
   left: string
+
   operator: Operator;
+
   right: string
 }
 
@@ -116,12 +171,14 @@ declare type ScrollOptions = { horizontal: boolean; vertical: boolean; }
 
 interface TriggerSchema {
   name: string;
+
   filters: Filter[];
+
   option: ClickOption | ScrollOptions,
 }
 
 //  ******************** TRACKER VARIABLE ********************
-declare type TrackerVariableType = "url" | "cookie" | "element" | "visibility" | "javascript" | "trigger"; // | "ip" | "location"  |  "os" | "browser";
+declare type TrackerVariableType = "url" | "cookie" | "element" | "visibility" | "javascript" | "viewDuration" | "trigger"; // | "ip" | "location"  |  "os" | "browser";
 declare type TriggerVariableType = "element" | "history";
 declare type URLSelection = "full" | "host" | "port" | "path" | "query" | "fragment" | "protocol";
 declare type HistorySelection = "newUrl" | "oldUrl" | "newState" | "oldState" | "changeSource";
@@ -136,17 +193,21 @@ declare type TriggerOption = { type: TriggerVariableType, option: ElementOption 
 
 interface TrackerVariableSchema {
   type: TrackerVariableType;
+
   name: string;
+
   option: ElementOption | VisibilityOption | UrlOption | CookieOption | JavascriptOption | TriggerOption;
 }
 
 interface TriggerVariableSchema extends TrackerVariableSchema {
   variableType: TriggerVariableType;
+
   attribute?: string;
+
   text?: boolean;
+
   selection?: URLSelection;
 }
-
 
 // ******************** TRACKER UTILS ********************
 
@@ -229,7 +290,9 @@ const resolveTrackerVariable = (trackerVariableSchema: TrackerVariableSchema, mo
     case "visibility":
       return resolveVisibilityVariable(trackerVariableSchema);
     case "javascript":
-      return resolveJavascriptVariable(trackerVariableSchema)
+      return resolveJavascriptVariable(trackerVariableSchema);
+    case "viewDuration":
+      return globalVariables.viewDuration || 0;
     case "trigger":
       return resolveTriggerVariable(trackerVariableSchema, mouseEvent)
     default :
