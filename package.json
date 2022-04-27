@@ -1,6 +1,6 @@
 {
   "name": "@trlogic/formica-tagging-web",
-  "version": "1.1.2",
+  "version": "1.1.5",
   "private": false,
   "description": "Formica Tagging Web",
   "scripts": {

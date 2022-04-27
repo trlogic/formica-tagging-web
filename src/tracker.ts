@@ -20,15 +20,33 @@ const trackerConfig: TrackerConfig = {
 let timerInstance: any = undefined;
 
 const globalVariables: KeyValueMap<any> = {
-  screenViewDuration: 0
+  viewDuration: 0
 }
 
+let tenant: string;
+let serviceUrl: string;
+
 export namespace FormicaTracker {
-  export const run = async (serviceUrl: string): Promise<void> => {
-    await getTrackers(serviceUrl);
-    initClientWorker();
-    initTimer();
-    trackerConfig.trackers.forEach(tracker => tracker.triggers.forEach(triggerSchema => initListener(triggerSchema, tracker.variables, tracker.event)));
+  export const run = async (_serviceUrl: string, tenantName: string): Promise<void> => {
+    try {
+      if (_serviceUrl == null || _serviceUrl.trim().length == 0) {
+        console.error("Service url must be passed");
+        return;
+      }
+      if (tenantName == null || tenantName.trim().length == 0) {
+        console.error("Tenant name must be passed");
+        return;
+      }
+      tenant = tenantName;
+      serviceUrl = _serviceUrl
+      await getTrackers();
+      initClientWorker();
+      initTimer();
+      trackerConfig.trackers.forEach(tracker => tracker.triggers.forEach(triggerSchema => initListener(triggerSchema, tracker.variables, tracker.event)));
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
+    }
   };
 
   export const track = (payload: TrackerPayload) => {
@@ -36,11 +54,11 @@ export namespace FormicaTracker {
   }
 }
 
-const getTrackers = async (serviceUrl: string) => {
+const getTrackers = async () => {
   try {
     const config = await _axios.get<TrackerResponse>(`${serviceUrl}/formicabox/activity-monitoring-service/v1/tracker/get-config`)
     trackerConfig.trackers = config.data.trackers.filter(tracker => tracker.platform == "Web");
-    trackerConfig.eventApiUrl = `${config.data.eventApiUrl}/event-listener/event/send-event/moneybo/async`;
+    trackerConfig.eventApiUrl = `${config.data.eventApiUrl}/event-listener/event/send-events/${tenant}`;
     trackerConfig.authServerUrl = config.data.authServerUrl;
   } catch (e) {
     console.error("Formica tracker config couldn't get", e);
@@ -128,7 +146,7 @@ interface Event {
 
   actor: string;
 
-  variables: { [key: string]: string | number | boolean }
+  variables: KeyValueMap<string | number | boolean | object | Array<KeyValueMap>>
 }
 
 interface EventSchema {
@@ -197,16 +215,6 @@ interface TrackerVariableSchema {
   name: string;
 
   option: ElementOption | VisibilityOption | UrlOption | CookieOption | JavascriptOption | TriggerOption;
-}
-
-interface TriggerVariableSchema extends TrackerVariableSchema {
-  variableType: TriggerVariableType;
-
-  attribute?: string;
-
-  text?: boolean;
-
-  selection?: URLSelection;
 }
 
 // ******************** TRACKER UTILS ********************
@@ -292,7 +300,7 @@ const resolveTrackerVariable = (trackerVariableSchema: TrackerVariableSchema, mo
     case "javascript":
       return resolveJavascriptVariable(trackerVariableSchema);
     case "viewDuration":
-      return globalVariables.viewDuration || 0;
+      return globalVariables.viewDuration ?? 0;
     case "trigger":
       return resolveTriggerVariable(trackerVariableSchema, mouseEvent)
     default :
