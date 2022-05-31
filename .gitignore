@@ -5,8 +5,6 @@ node_modules/
 *.iml
 .DS_Store
 */.DS_Store
-package-lock.json
-*/package-lock.json
 */yarn.lock
 \dist
 \node_modules
