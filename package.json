@@ -1,28 +1,46 @@
 {
   "name": "@trlogic/formica-tagging-web",
-  "version": "1.1.5",
-  "private": false,
+  "version": "1.2.1",
   "description": "Formica Tagging Web",
+  "exports": {
+    ".": {
+      "require": "./dist/index.umd.min.js",
+      "import": "./dist/index.esm.min.js"
+    }
+  },
   "scripts": {
-    "build": "tsc",
+    "build:types": "tsc -d --emitDeclarationOnly",
+    "build:js": "rollup -c rollup.config.js",
+    "build:minjs:umd": "terser dist/index.umd.js --compress --mangle > dist/index.umd.min.js",
+    "build:minjs:esm": "terser dist/index.esm.js --compress --mangle > dist/index.esm.min.js",
+    "build:minjs": "npm run build:minjs:esm -s && npm run build:minjs:umd -s",
+    "build": "npm run build:js -s && npm run build:minjs -s && npm run build:types -s",
     "prepare": "npm run build"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trlogic/formica-tagging-web.git"
   },
-  "main": "dist/tracker.js",
-  "types": "dist/tracker.d.ts",
+  "main": "dist/index.umd.min.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.esm.min.js",
+  "files": [
+    "src",
+    "dist"
+  ],
   "keywords": [
     "web"
   ],
   "author": "trlogic",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.26.1"
+    "@rollup/plugin-typescript": "^8.3.2",
+    "axios": "^0.26.1",
+    "rollup": "^2.75.3",
+    "terser": "^5.14.0"
   },
   "devDependencies": {
-    "@types/node": "^17.0.21",
-    "@types/axios": "^0.14.0"
+    "@types/axios": "^0.14.0",
+    "@types/node": "^17.0.21"
   }
 }
