@@ -26,7 +26,7 @@ const globalVariables: KeyValueMap<any> = {
 let tenant: string;
 let serviceUrl: string;
 
-export namespace FormicaTracker {
+namespace FormicaTracker {
   export const run = async (_serviceUrl: string, tenantName: string): Promise<void> => {
     try {
       if (_serviceUrl == null || _serviceUrl.trim().length == 0) {
@@ -53,6 +53,8 @@ export namespace FormicaTracker {
     eventQueue.push(payload);
   }
 }
+
+export default FormicaTracker
 
 const getTrackers = async () => {
   try {

@@ -1,1 +1,3 @@
-export * from "./tracker"
+import FormicaTracker from "./tracker";
+
+export default FormicaTracker;

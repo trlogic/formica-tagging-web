@@ -12,6 +12,22 @@ export default {
    format: 'umd',
    name: 'umd',
   },
+  {
+   file: "dist/index.amd.js",
+   format: "amd",
+   name: "amd"
+  },
+  {
+   file: 'dist/index.js',
+   format: 'iife',
+   name: "FormicaTracker",
+   exports: "default"
+  },
+  {
+   file: `dist/bundle.js`,
+   format: 'cjs',
+   sourcemap: true
+  },
  ],
  plugins: [typescript()],
 };
