@@ -104,7 +104,7 @@ const initListener = (triggerSchema: TriggerSchema, trackerVariableSchemas: Trac
   switch (triggerSchema.name) {
     case "pageView": {
       previousHref = document.location.href;
-      document.addEventListener("load", function (e) {
+      window.addEventListener("load", function (e) {
         const bodyList: HTMLElement = document.querySelector("body")!
         const observer = new MutationObserver(function (mutations) {
           mutations.forEach(function () {
