@@ -122,6 +122,12 @@ const initListener = (triggerSchema: TriggerSchema, trackerVariableSchemas: Trac
       });
       break;
     }
+    case "custom": {
+      document.addEventListener((triggerSchema.option as CustomEventOption).event, (e) => {
+        eventListenerHandler(e, triggerSchema, trackerVariableSchemas, eventSchema)
+      });
+      break;
+    }
     default: {
       document.addEventListener(triggerSchema.name, (e) => {
         eventListenerHandler(e, triggerSchema, trackerVariableSchemas, eventSchema)
@@ -219,13 +225,14 @@ interface Filter {
 
 declare type ClickOption = { justLinks: boolean }
 declare type ScrollOptions = { horizontal: boolean; vertical: boolean; }
+declare type CustomEventOption = { event: string };
 
 interface TriggerSchema {
   name: string;
 
   filters: Filter[];
 
-  option: ClickOption | ScrollOptions,
+  option: ClickOption | ScrollOptions | CustomEventOption,
 }
 
 //  ******************** TRACKER VARIABLE ********************
