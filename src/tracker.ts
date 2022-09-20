@@ -23,6 +23,8 @@ const globalVariables: KeyValueMap<any> = {
   viewDuration: 0
 }
 
+let previousHref: string | undefined;
+
 let tenant: string;
 let serviceUrl: string;
 
@@ -99,19 +101,48 @@ const timerHandler = () => {
 //  ******************** EVENT HANDLERS  ********************
 
 const initListener = (triggerSchema: TriggerSchema, trackerVariableSchemas: TrackerVariableSchema[], eventSchema: EventSchema) => {
-  document.addEventListener(triggerSchema.name, (e) => {
-    const trackerVariables: KeyValueMap = {};
-    trackerVariableSchemas.forEach(trackerVariableSchema => {
-      trackerVariables[trackerVariableSchema.name] = resolveTrackerVariable(trackerVariableSchema, e as MouseEvent)
-    });
-
-    const validated: boolean = validate(e as MouseEvent, triggerSchema, trackerVariables);
-    if (validated) {
-      const event: Event = buildEvent(eventSchema, trackerVariables);
-      sendEvent(event);
+  switch (triggerSchema.name) {
+    case "pageView": {
+      previousHref = document.location.href;
+      document.addEventListener("load", function (e) {
+        const bodyList: HTMLElement = document.querySelector("body")!
+        const observer = new MutationObserver(function (mutations) {
+          mutations.forEach(function () {
+            if (previousHref !== document.location.href) {
+              eventListenerHandler(e, triggerSchema, trackerVariableSchemas, eventSchema);
+              previousHref = document.location.href;
+            }
+          });
+        });
+        const config = {
+          childList: true,
+          subtree: true
+        };
+        observer.observe(bodyList, config);
+      });
+      break;
     }
-  });
+    default: {
+      document.addEventListener(triggerSchema.name, (e) => {
+        eventListenerHandler(e, triggerSchema, trackerVariableSchemas, eventSchema)
+      });
+      break;
+    }
+  }
 };
+
+const eventListenerHandler = (e: any, triggerSchema: TriggerSchema, trackerVariableSchemas: TrackerVariableSchema[], eventSchema: EventSchema) => {
+  const trackerVariables: KeyValueMap = {};
+  trackerVariableSchemas.forEach(trackerVariableSchema => {
+    trackerVariables[trackerVariableSchema.name] = resolveTrackerVariable(trackerVariableSchema, e as MouseEvent)
+  });
+
+  const validated: boolean = validate(e as MouseEvent, triggerSchema, trackerVariables);
+  if (validated) {
+    const event: Event = buildEvent(eventSchema, trackerVariables);
+    sendEvent(event);
+  }
+}
 
 const validate = (e: MouseEvent, triggerSchema: TriggerSchema, trackerVariables: KeyValueMap): boolean => {
   switch (triggerSchema.name) {
