@@ -1,5 +1,5 @@
 //  ******************** TRACKER  ********************
-import axios, {AxiosInstance} from "axios";
+import axios, {AxiosInstance, AxiosResponse} from "axios";
 
 declare type KeyValueMap<T = string> = { [key: string]: T };
 declare type TrackerPayload = Event;
@@ -14,6 +14,7 @@ const eventQueue: TrackerPayload[] = [];
 const trackerConfig: TrackerConfig = {
   authServerUrl: "",
   eventApiUrl: "",
+  syncEventApiUrl: "",
   trackers: []
 }
 
@@ -54,6 +55,15 @@ namespace FormicaTracker {
   export const track = (payload: TrackerPayload) => {
     eventQueue.push(payload);
   }
+
+  export const call = async <T>(payload: TrackerPayload): Promise<T> => {
+    try {
+      const response: AxiosResponse<T> = await _axios.post(trackerConfig.syncEventApiUrl, payload);
+      return response.data;
+    } catch (e: any) {
+      throw new Error(e);
+    }
+  }
 }
 
 export default FormicaTracker
@@ -63,6 +73,7 @@ const getTrackers = async () => {
     const config = await _axios.get<TrackerResponse>(`${serviceUrl}/formicabox/activity-monitoring-service/v1/tracker/get-config`)
     trackerConfig.trackers = config.data.trackers.filter(tracker => tracker.platform == "Web");
     trackerConfig.eventApiUrl = `${config.data.eventApiUrl}/event-listener/event/send-events/${tenant}`;
+    trackerConfig.syncEventApiUrl = `${config.data.eventApiUrl}/event-listener/event/send-event/${tenant}/sync`;
     trackerConfig.authServerUrl = config.data.authServerUrl;
   } catch (e) {
     console.error("Formica tracker config couldn't get", e);
@@ -175,6 +186,8 @@ interface TrackerConfig {
   trackers: TrackerSchema[];
 
   eventApiUrl: string;
+
+  syncEventApiUrl: string;
 
   authServerUrl: string;
 }
