@@ -82,6 +82,8 @@ const getTrackers = async () => {
 
 const initClientWorker = () => {
   setInterval(() => {
+    const isOnline = window.navigator.onLine;
+    if (!isOnline) return;
 
     const events: TrackerPayload[] = [];
     while (eventQueue.length > 0) {
