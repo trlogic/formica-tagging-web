@@ -92,6 +92,10 @@ const initClientWorker = () => {
     }
 
     if (events.length > 0) {
+      if (!isOnline) {
+        eventQueue.splice(0, 0, ...events);
+        return;
+      }
       _axios.post(trackerConfig.eventApiUrl, {events});
     }
   }, 3000);
