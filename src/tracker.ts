@@ -246,15 +246,11 @@ interface TrackerConfig {
 interface Event {
   name: string;
 
-  actor: string;
-
   variables: KeyValueMap<string | number | boolean | object | Array<KeyValueMap>>
 }
 
 interface EventSchema {
   name: string;
-
-  actorMapping: string;
 
   variableMappings: { name: string, value: string }[]
 }
@@ -491,10 +487,9 @@ const resolveTriggerVariable = (trackerVariableSchema: TrackerVariableSchema, mo
 // -----
 const buildEvent = (eventSchema: EventSchema, trackerVariables: KeyValueMap): Event => {
   const name: string = eventSchema.name;
-  const actor: string = resolveMapping(eventSchema.actorMapping, trackerVariables);
   const variables: KeyValueMap = {};
   eventSchema.variableMappings.forEach(variableMapping => variables[variableMapping.name] = resolveMapping(variableMapping.value, trackerVariables));
-  return {name, actor, variables}
+  return {name, variables}
 };
 
 const resolveMapping = (mapping: string, trackerVariables: KeyValueMap): string => {
