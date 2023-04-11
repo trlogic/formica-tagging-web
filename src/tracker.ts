@@ -105,13 +105,13 @@ const initAuthenticateWorkers = async () => {
     const request = new URLSearchParams({
       username,
       password,
-      client_id: client,
+      client_id: "event-client",
       grant_type: "password",
     })
     const config: any = {
       headers: {'content-type': 'application/x-www-form-urlencoded'},
     };
-    const response = await _axios.post(`${authServiceUrl}/auth/realms/${tenant}/protocol/openid-connect/token`, request.toString(), config)
+    const response = await _axios.post(`${authServiceUrl}/auth/realms/service/protocol/openid-connect/token`, request.toString(), config)
     const authToken: {
       "access_token": string;
       "expires_in": number;
