@@ -30,18 +30,17 @@ let tenant: string;
 let serviceUrl: string;
 let username: string;
 let password: string;
-let client: string;
 let token: string | undefined = undefined;
 let authServiceUrl: string
 
 namespace FormicaTracker {
-  export const run = async (_serviceUrl: string, _authServiceUrl: string, tenantName: string, _username: string, _password: string, _client: string): Promise<void> => {
+  export const run = async (_serviceUrl: string, _authServiceUrl: string, tenantName: string, _username: string, _password: string): Promise<void> => {
     try {
       if (_serviceUrl == null || _serviceUrl.trim().length == 0 || _authServiceUrl == undefined || _authServiceUrl.trim().length == 0) {
         console.error("Service url must be passed");
         return;
       }
-      if (_username == undefined || _username.trim().length == 0 || _password == undefined || _password.length == 0 || _client == undefined || _client.trim().length == 0) {
+      if (_username == undefined || _username.trim().length == 0 || _password == undefined || _password.length == 0) {
         console.error("Service authentication information must be passed");
         return;
       }
@@ -51,7 +50,6 @@ namespace FormicaTracker {
       }
       username = _username;
       password = _password;
-      client = _client;
       authServiceUrl = _authServiceUrl;
       tenant = tenantName;
       serviceUrl = _serviceUrl
